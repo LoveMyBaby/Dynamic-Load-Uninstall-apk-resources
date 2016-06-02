@@ -49,9 +49,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //第一步把apk拷贝至sd卡的plugin目录下
-//        copyApkFile("apkthemeplugin-1.apk");
-//        copyApkFile("apkthemeplugin-2.apk");
-//        copyApkFile("apkthemeplugin-3.apk");
+        copyApkFile("apkthemeplugin-1.apk");
+        copyApkFile("apkthemeplugin-2.apk");
+        copyApkFile("apkthemeplugin-3.apk");
         Toast.makeText(this, "拷贝完成", Toast.LENGTH_SHORT).show();
     }
     //拷贝apk文件至sd卡plugin目录下
