@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -58,6 +59,7 @@ public class MainActivity extends ActionBarActivity  implements OnClickListener 
         findViewById(R.id.btn_changebackgound).setOnClickListener(this);
         findViewById(R.id.btn_getvalue_from_plugin_method_nop).setOnClickListener(this);
         findViewById(R.id.btn_getvalue_from_plugin_method_hasp).setOnClickListener(this);
+        findViewById(R.id.btn_getvalue_from_plugin_private_method_nop).setOnClickListener(this);
     }
 
     //拷贝apk文件至sd卡plugin目录下
@@ -187,6 +189,32 @@ public class MainActivity extends ActionBarActivity  implements OnClickListener 
         int bc = (int) md.invoke(object, 1001);
         Log.i(TAG, "bc==="+bc);
         Toast.makeText(this, "get BadgeCounts value(with Int params)="+bc, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 加载apk获得内部class的私有方法
+     * @param apkDir apk目录
+     * @param apkName apk名字,带.apk
+     * @throws Exception
+     */
+    private void dynamicLoadApkPrivateMethodNoParams(String apkDir, String apkName, String apkPackageName) throws Exception{
+        File optimizedDirectoryFile = getDir("dex", Context.MODE_PRIVATE);//在应用安装目录下创建一个名为app_dex文件夹目录,如果已经存在则不创建
+        Log.v(TAG, optimizedDirectoryFile.getPath().toString());// /data/data/com.example.dynamicloadapk/app_dex
+        //参数：
+        // 1、包含dex的apk文件或jar文件的路径;
+        // 2、apk、jar解压缩生成dex存储的目录;
+        // 3、本地library库目录，一般为null;
+        // 4、父ClassLoader;
+        DexClassLoader dexClassLoader = new DexClassLoader(apkDir+File.separator+apkName, optimizedDirectoryFile.getPath(), null, ClassLoader.getSystemClassLoader());
+
+        Class<?> methClazz = dexClassLoader.loadClass(apkPackageName + ".MainActivity");
+
+        Constructor constructor = methClazz.getConstructor(new Class[]{});
+        Object instance = constructor.newInstance(new Object[]{});
+        Method getMoney = methClazz.getDeclaredMethod("getInteger", new Class[0]);
+        getMoney.setAccessible(true);
+        Object privateValue = getMoney.invoke(instance, new Object[0]);
+        Toast.makeText(this, privateValue.toString(), Toast.LENGTH_LONG).show();
     }
 
     /**
@@ -348,6 +376,10 @@ public class MainActivity extends ActionBarActivity  implements OnClickListener 
             case R.id.btn_getvalue_from_plugin_method_hasp:
                 getPluginMethodValueWithParams();
                 break;
+
+            case R.id.btn_getvalue_from_plugin_private_method_nop:
+                getPluginPrivateMethodValueNoParams();
+                break;
         }
     }
 
@@ -402,6 +434,25 @@ public class MainActivity extends ActionBarActivity  implements OnClickListener 
             String apkname = apkName.get(0);
             try {
                 dynamicLoadApkMethodWithParams(apkDir, apkname, pkgName);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void getPluginPrivateMethodValueNoParams(){
+        datas = getDemoPlugin(apkDir);
+        //第三步显示查找后可用的apk插件
+        if(datas==null||datas.isEmpty()){
+            Toast.makeText(this, "Could Not found Plugin(demo.apk)", Toast.LENGTH_SHORT).show();
+        }
+
+        HashMap<String,String> map =datas.get(0);
+        if(map!=null){
+            String pkgName = map.get("pkgName");
+            String apkname = apkName.get(0);
+            try {
+                dynamicLoadApkPrivateMethodNoParams(apkDir, apkname, pkgName);
             } catch (Exception e) {
                 e.printStackTrace();
             }
